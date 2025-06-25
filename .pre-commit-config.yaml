@@ -1,27 +1,32 @@
-repos:
-  - repo: https://github.com/python/black
-    rev: 24.3.0
+repos
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.8
     hooks:
-      - id: black
-        args: ["--line-length", "120", "--unstable"]
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+      - id: ruff  # Linter
+        args: [ --select, I, --fix ]
+      - id: ruff-format  # Formatter
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
+    rev: v1.0.5
     hooks:
-      - id: flake8
-        additional_dependencies: [flake8-simplify, flake8-return]
+    - id: python-bandit-vulnerability-check
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
+      - id: check-added-large-files
+      - id: check-docstring-first
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
       - id: trailing-whitespace
       - id: check-symlinks
+      - id: check-no-commit-to-branch
+      - id: pretty-format-json
+        args: ['--autofix']
       - id: destroyed-symlinks
-      - id: check-added-large-files
         args: ["--maxkb=2000"]  # restrict files more than 2 MB. Should use git-lfs instead.
-      - id: check-yaml
       - id: check-merge-conflict
       - id: check-case-conflict
       - id: check-executables-have-shebangs
-      - id: check-toml
       - id: end-of-file-fixer
       - id: check-shebang-scripts-are-executable
       - id: detect-private-key
