@@ -1,3 +1,17 @@
 [build-system]
 requires = ["setuptools", "wheel", "toml"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["ALL"]
+pydocstyle.convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+exclude = ["D203", "D212", "COM812", "ISC001", "Q000", "Q003"]
+
+[tool.bandit]
+skips = ["B101", "B113", "B301", "B311", "B403", "B404", "B603", "B605", "B607", "B614"]
