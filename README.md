@@ -1,19 +1,11 @@
-# Template for Isaac Lab Projects
+# Universal Parkour Policy on Unitree Go2
 
-## Overview
-
-This project/repository serves as a template for building projects or extensions based on Isaac Lab.
-It allows you to develop in an isolated environment, outside of the core Isaac Lab repository.
-
-**Key Features:**
-
-- `Isolation` Work outside the core Isaac Lab repository, ensuring that your development efforts remain self-contained.
-- `Flexibility` This template is set up to allow your code to be run as an extension in Omniverse.
-
-**Keywords:** extension, template, isaaclab
+## Objective
+The goal of this project, is to create a system that learns a single, end-to-end parkour policy based on vision. It should perform a variety of parkour moves using a simple reward system, without needing any reference motion data.
+We will create a reinforcement learning method, to teach skills like climbing over tall obstacles, jumping across wide gaps, crawling under low barriers, squeezing through narrow spaces, and running.
+These skills are combined into one vision-based parkour policy, which we willtransfer to our quadrupedal robot, the Unitree Go2 using its front-facing depth camera.
 
 ## Installation
-
 - Install Isaac Lab by following the [installation guide](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html).
   We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
 
@@ -24,6 +16,7 @@ It allows you to develop in an isolated environment, outside of the core Isaac L
     ```bash
     # use 'PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
     python -m pip install -e source/parkour_distillation
+    ```
 
 - Verify that the extension is correctly installed by:
 
@@ -60,76 +53,82 @@ It allows you to develop in an isolated environment, outside of the core Isaac L
             # use 'FULL_PATH_TO_isaaclab.sh|bat -p' instead of 'python' if Isaac Lab is not installed in Python venv or conda
             python scripts/random_agent.py --task=<TASK_NAME>
             ```
+## Docker setup
 
-### Set up IDE (Optional)
+### Building Isaac Lab Base Image
 
-To setup the IDE, please follow these instructions:
+Currently, we don't have the Docker for Isaac Lab publicly available. Hence, you'd need to build the docker image
+for Isaac Lab locally by following the steps [here](https://isaac-sim.github.io/IsaacLab/main/source/deployment/index.html).
 
-- Run VSCode Tasks, by pressing `Ctrl+Shift+P`, selecting `Tasks: Run Task` and running the `setup_python_env` in the drop down menu.
-  When running this task, you will be prompted to add the absolute path to your Isaac Sim installation.
-
-If everything executes correctly, it should create a file .python.env in the `.vscode` directory.
-The file contains the python paths to all the extensions provided by Isaac Sim and Omniverse.
-This helps in indexing all the python modules for intelligent suggestions while writing code.
-
-### Setup as Omniverse Extension (Optional)
-
-We provide an example UI extension that will load upon enabling your extension defined in `source/parkour_distillation/parkour_distillation/ui_extension_example.py`.
-
-To enable your extension, follow these steps:
-
-1. **Add the search path of this project/repository** to the extension manager:
-    - Navigate to the extension manager using `Window` -> `Extensions`.
-    - Click on the **Hamburger Icon**, then go to `Settings`.
-    - In the `Extension Search Paths`, enter the absolute path to the `source` directory of this project/repository.
-    - If not already present, in the `Extension Search Paths`, enter the path that leads to Isaac Lab's extension directory directory (`IsaacLab/source`)
-    - Click on the **Hamburger Icon**, then click `Refresh`.
-
-2. **Search and enable your extension**:
-    - Find your extension under the `Third Party` category.
-    - Toggle it to enable your extension.
-
-## Code formatting
-
-We have a pre-commit template to automatically format your code.
-To install pre-commit:
+Once you have built the base Isaac Lab image, you can check it exists by doing:
 
 ```bash
-pip install pre-commit
+docker images
+
+# Output should look something like:
+#
+# REPOSITORY                       TAG       IMAGE ID       CREATED          SIZE
+# isaac-lab-base                   latest    28be62af627e   32 minutes ago   18.9GB
 ```
 
-Then you can run pre-commit with:
+### Building Parkour Distillation Image
+
+Following above, you can build the docker container for this project. It is called `parkour-distillation-base`.
 
 ```bash
-pre-commit run --all-files
+cd docker
+docker compose --env-file .env.base --file docker-compose.yaml build parkour-distillation-base
 ```
 
-## Troubleshooting
+You can verify the image is built successfully using the same command as earlier:
 
-### Pylance Missing Indexing of Extensions
+```bash
+docker images
 
-In some VsCode versions, the indexing of part of the extensions is missing.
-In this case, add the path to your extension in `.vscode/settings.json` under the key `"python.analysis.extraPaths"`.
-
-```json
-{
-    "python.analysis.extraPaths": [
-        "<path-to-ext-repo>/source/parkour_distillation"
-    ]
-}
+# Output should look something like:
+#
+# REPOSITORY                       TAG       IMAGE ID       CREATED             SIZE
+# parkour-distillation-base        latest    00b00b647e1b   2 minutes ago       18.9GB
+# isaac-lab-base                   latest    892938acb55c   About an hour ago   18.9GB
 ```
 
-### Pylance Crash
+### Running the container
 
-If you encounter a crash in `pylance`, it is probable that too many files are indexed and you run out of memory.
-A possible solution is to exclude some of omniverse packages that are not used in your project.
-To do so, modify `.vscode/settings.json` and comment out packages under the key `"python.analysis.extraPaths"`
-Some examples of packages that can likely be excluded are:
+After building, the usual next step is to start the containers associated with your services. You can do this with:
 
-```json
-"<path-to-isaac-sim>/extscache/omni.anim.*"         // Animation packages
-"<path-to-isaac-sim>/extscache/omni.kit.*"          // Kit UI tools
-"<path-to-isaac-sim>/extscache/omni.graph.*"        // Graph UI tools
-"<path-to-isaac-sim>/extscache/omni.services.*"     // Services tools
-...
+```bash
+docker compose --env-file .env.base --file docker-compose.yaml up
 ```
+
+This will start the services defined in your `docker-compose.yaml` file, including isaac-lab-template.
+
+If you want to run it in detached mode (in the background), use:
+
+```bash
+docker compose --env-file .env.base --file docker-compose.yaml up -d
+```
+
+### Interacting with a running container
+
+If you want to run commands inside the running container, you can use the `exec` command:
+
+```bash
+docker exec --interactive --tty -e DISPLAY=${DISPLAY} parkour-distillation-base /bin/bash
+```
+
+### Shutting down the container
+
+When you are done or want to stop the running containers, you can bring down the services:
+
+```bash
+docker compose --env-file .env.base --file docker-compose.yaml down
+```
+
+This stops and removes the containers, but keeps the images.
+
+## Resources
+
+- [Robot Parkour Learning](https://robot-parkour.github.io/)
+- [Extreme Parkour with Legged Robots](https://extreme-parkour.github.io/)
+- [Learning To Walk in Minutes](https://leggedrobotics.github.io/legged_gym/)
+- [Isaac Lab Documentation](https://isaac-sim.github.io/IsaacLab/main/index.html#)
