@@ -13,7 +13,7 @@ from . import agents
 
 
 gym.register(
-    id="Template-Parkour-Distillation-v0",
+    id="vbz-Template-Parkour-Distillation-v0",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
